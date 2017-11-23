@@ -1,0 +1,128 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:cache="http://www.springframework.org/schema/cache"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+		http://www.springframework.org/schema/beans	
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+	 
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx.xsd
+		 
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/cache
+		http://www.springframework.org/schema/cache/spring-cache.xsd
+		
+		http://www.springframework.org/schema/task    
+        http://www.springframework.org/schema/task/spring-task-3.0.xsd    
+        
+		http://www.springframework.org/schema/aop 
+     	http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+		">
+
+	<bean id="logAspect" class="com.ipin.service.rest.aop.LogAspect"/>
+	<aop:aspectj-autoproxy proxy-target-class="true" />
+
+	<!-- spring的属性加载器，加载properties文件中的属性 -->
+	<bean id="configProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="locations">
+			<list>
+				<value>classpath*:/config.properties</value>
+			</list>
+		</property>
+		<property name="fileEncoding" value="utf-8"/>
+	</bean>
+	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PreferencesPlaceholderConfigurer">
+		<property name="properties" ref="configProperties" />
+	</bean>
+    
+    <!-- spring可以自动去扫描base-pack下面或者子包下面的java文件，如果扫描到有@Component @Controller@Service等这些注解的类，则把这些类注册为bean -->
+    <context:component-scan base-package="com.ipin.service.rest.*"/>
+    
+    <!-- Enables the Spring Task @Scheduled programming model -->
+	<task:executor id="executor" pool-size="1" />
+	<task:scheduler id="scheduler" pool-size="1" />
+	<task:annotation-driven executor="executor" scheduler="scheduler" />
+
+    <bean id="schoolService" class="com.ipin.service.rest.service.impl.SchoolServiceImpl"/>
+    <bean id="majorService" class="com.ipin.service.rest.service.impl.MajorServiceImpl"/>
+	<bean id="majorSecondCategoryService" class="com.ipin.service.rest.service.impl.MajorSecondCategoryServiceImpl"/>
+    <bean id="restCommonService" class="com.ipin.service.rest.service.impl.CommonServiceImpl"/>
+    <bean id ="applyRestService" class="com.ipin.service.rest.service.impl.ApplyRestServiceImpl"/>
+
+    <bean id="schoolResource" class="com.ipin.service.rest.resource.school.SchoolResource"/>
+    <bean id="majorResource" class="com.ipin.service.rest.resource.school.MajorResource"/>
+    <bean id="majorSecondCategoryResource" class="com.ipin.service.rest.resource.school.MajorSecondCategoryResource"/>
+    <bean id="commonResource" class="com.ipin.service.rest.resource.school.CommonResource"/>
+    <bean id="versionService" class="com.ipin.service.rest.resource.manifest.ManifestService"/>
+    
+    <bean id="applyService" class="com.ipin.service.rest.client.ThriftClientProxyBuilder" factory-method="buildThriftClientProxy">
+    	<constructor-arg index="0" value="${thrift.apply.ip}"></constructor-arg>
+    	<constructor-arg index="1" value="${thrift.apply.port}"></constructor-arg>
+    	<constructor-arg index="2" value="com.linyk3.thrift.apply.ApplyService$Iface"></constructor-arg>
+    </bean>
+    
+    <bean id="eduInfoService" class="com.ipin.service.rest.client.ThriftClientProxyBuilder" factory-method="buildThriftClientProxy">
+    	<constructor-arg index="0" value="${thrift.edu_info.ip}"></constructor-arg>
+    	<constructor-arg index="1" value="${thrift.edu_info.port}"></constructor-arg>
+    	<constructor-arg index="2" value="com.ipin.thrift.edu.EduInfoService$Iface"></constructor-arg>
+    </bean>
+    
+    <bean id="eduEnrollService" class="com.ipin.service.rest.client.ThriftClientProxyBuilder" factory-method="buildThriftClientProxy">
+    	<constructor-arg index="0" value="${thrift.edu_enroll.ip}"></constructor-arg>
+    	<constructor-arg index="1" value="${thrift.edu_enroll.port}"></constructor-arg>
+    	<constructor-arg index="2" value="com.ipin.thrift.edu.EduEnrollService$Iface"></constructor-arg>
+    </bean>
+    
+    <bean id="eduStatService" class="com.ipin.service.rest.client.ThriftClientProxyBuilder" factory-method="buildThriftClientProxy">
+    	<constructor-arg index="0" value="${thrift.edu_stat.ip}"></constructor-arg>
+    	<constructor-arg index="1" value="${thrift.edu_stat.port}"></constructor-arg>
+    	<constructor-arg index="2" value="com.ipin.thrift.edu.EduStatService$Iface"></constructor-arg>
+    </bean>
+    
+    <bean id="eduScoreService" class="com.ipin.service.rest.client.ThriftClientProxyBuilder" factory-method="buildThriftClientProxy">
+    	<constructor-arg index="0" value="${thrift.edu_score.ip}"></constructor-arg>
+    	<constructor-arg index="1" value="${thrift.edu_score.port}"></constructor-arg>
+    	<constructor-arg index="2" value="com.ipin.thrift.edu.EduScoreService$Iface"></constructor-arg>
+    </bean>
+    
+    <bean id="commonService" class="com.ipin.service.rest.client.ThriftClientProxyBuilder" factory-method="buildThriftClientProxy">
+    	<constructor-arg index="0" value="${thrift.common.ip}"></constructor-arg>
+    	<constructor-arg index="1" value="${thrift.common.port}"></constructor-arg>
+    	<constructor-arg index="2" value="com.ipin.thrift.common.CommonService$Iface"></constructor-arg>
+    </bean>
+
+
+    <cache:annotation-driven/>
+
+    <!--redis for cache-->
+    <bean id="jedisConnectionFactory"
+          class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+        <property name="usePool" value="true"/>
+        <property name="hostName" value="${redis.host}"/>
+        <property name="database" value="${redis.db}"/>
+        <property name="password" value="${redis.password}"/>
+        <property name="port" value="${redis.port}"/>
+        <property name="timeout" value="${redis.timeout}"/>
+    </bean>
+
+    <!-- redis template definition -->
+    <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate">
+        <property name="connectionFactory" ref="jedisConnectionFactory"/>
+    </bean>
+
+
+    <!-- cache manager for annotation @Cacheable -->
+    <bean id="cacheManager" class="org.springframework.data.redis.cache.RedisCacheManager">
+        <constructor-arg ref="redisTemplate"/>
+        <!-- Number of seconds before expiration. Defaults to unlimited (0)-->
+        <property name="defaultExpiration" value="${cachemanager.expiration}"/>
+    </bean>
+
+    <bean id="keyGenerator" class="com.ipin.service.rest.helpers.KeyGeneratorImpl"/>
+</beans>
